@@ -20,6 +20,9 @@ class FlutterVideoRenderer
 
   virtual const FlutterDesktopPixelBuffer* CopyPixelBuffer(size_t width,
                                                            size_t height) const;
+  virtual const FlutterDesktopGpuSurfaceDescriptor* CopyGPUBuffer(
+      size_t width,
+                                                           size_t height) const;
 
   virtual void OnFrame(scoped_refptr<RTCVideoFrame> frame) override;
 
@@ -39,6 +42,7 @@ class FlutterVideoRenderer
     size_t height;
   };
   FrameSize last_frame_size_ = {0, 0};
+  bool hardware_accelerated = false;
   bool first_frame_rendered = false;
   TextureRegistrar* registrar_ = nullptr;
   std::unique_ptr<EventChannelProxy> event_channel_;
@@ -47,6 +51,7 @@ class FlutterVideoRenderer
   scoped_refptr<RTCVideoFrame> frame_;
   std::unique_ptr<flutter::TextureVariant> texture_;
   std::shared_ptr<FlutterDesktopPixelBuffer> pixel_buffer_;
+  std::shared_ptr<FlutterDesktopGpuSurfaceDescriptor> surface_descriptor_;
   mutable std::shared_ptr<uint8_t> rgb_buffer_;
   mutable std::mutex mutex_;
   RTCVideoFrame::VideoRotation rotation_ = RTCVideoFrame::kVideoRotation_0;
