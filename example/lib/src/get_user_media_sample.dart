@@ -186,6 +186,9 @@ class _GetUserMediaSampleState extends State<GetUserMediaSample> {
             ));
   }
 
+  void donothing(double a) {
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(

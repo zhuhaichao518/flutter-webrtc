@@ -10,6 +10,7 @@ import 'rtc_video_renderer_impl.dart';
 class RTCVideoView extends StatefulWidget {
   RTCVideoView(
     this._renderer, {
+    this.setAspectRatio,
     Key? key,
     this.objectFit = RTCVideoViewObjectFit.RTCVideoViewObjectFitContain,
     this.mirror = false,
@@ -22,6 +23,7 @@ class RTCVideoView extends StatefulWidget {
   final bool mirror;
   final FilterQuality filterQuality;
   final WidgetBuilder? placeholderBuilder;
+  final Function(double)? setAspectRatio;
 
   @override
   RTCVideoViewState createState() => RTCVideoViewState();
@@ -59,6 +61,9 @@ class RTCVideoViewState extends State<RTCVideoView> {
     super.didUpdateWidget(oldWidget);
     Timer(
         Duration(milliseconds: 10), () => videoRenderer.mirror = widget.mirror);
+    if (widget.setAspectRatio!=null){
+      widget.setAspectRatio!(videoRenderer.videoWidth/videoRenderer.videoHeight);
+    }
     videoRenderer.objectFit =
         widget.objectFit == RTCVideoViewObjectFit.RTCVideoViewObjectFitContain
             ? 'contain'

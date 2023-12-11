@@ -8,7 +8,8 @@ import 'rtc_video_renderer_impl.dart';
 
 class RTCVideoView extends StatelessWidget {
   RTCVideoView(
-    this._renderer, {
+    this._renderer,{
+    this.setAspectRatio,
     Key? key,
     this.objectFit = RTCVideoViewObjectFit.RTCVideoViewObjectFitContain,
     this.mirror = false,
@@ -21,6 +22,7 @@ class RTCVideoView extends StatelessWidget {
   final bool mirror;
   final FilterQuality filterQuality;
   final WidgetBuilder? placeholderBuilder;
+  final Function(double)? setAspectRatio;
 
   RTCVideoRenderer get videoRenderer => _renderer;
 
@@ -46,6 +48,9 @@ class RTCVideoView extends StatelessWidget {
               valueListenable: videoRenderer,
               builder:
                   (BuildContext context, RTCVideoValue value, Widget? child) {
+                if (setAspectRatio!=null){
+                  setAspectRatio!(value.aspectRatio);
+                }
                 return SizedBox(
                   width: constraints.maxHeight * value.aspectRatio,
                   height: constraints.maxHeight,
