@@ -68,9 +68,7 @@ void FlutterDataChannel::CreateDataChannel(
   result->Success(EncodableValue(params));
 }
 
-//todo: should be hookedchannels instead of one channel
-static RTCDataChannel* hookedchannel=nullptr;
-static HWINEVENTHOOK hook;
+static std::map<RTCDataChannel*, HWINEVENTHOOK> hookedchannels;
 
 HANDLE GetCursorHandle(HCURSOR hCursor) {
   static HCURSOR hArrow = LoadCursor(NULL, IDC_ARROW);
@@ -167,13 +165,18 @@ void CursorChangedEventProc(HWINEVENTHOOK hook2,
     switch (event) {
       case EVENT_OBJECT_HIDE:
         str = "csrhide";
-        hookedchannel->Send(reinterpret_cast<const uint8_t*>(str.c_str()),
-                           static_cast<uint32_t>(str.length()), false);
+        for (auto hookedchannel : hookedchannels) {
+          hookedchannel.first->Send(reinterpret_cast<const uint8_t*>(str.c_str()),
+                              static_cast<uint32_t>(str.length()), false);
+        }
         break;
       case EVENT_OBJECT_SHOW:
         str = "csrshow";
-        hookedchannel->Send(reinterpret_cast<const uint8_t*>(str.c_str()),
-                            static_cast<uint32_t>(str.length()), false);
+        for (auto hookedchannel : hookedchannels) {
+          hookedchannel.first->Send(
+              reinterpret_cast<const uint8_t*>(str.c_str()),
+                               static_cast<uint32_t>(str.length()), false);
+        }
         break;
       case EVENT_OBJECT_NAMECHANGE:
         str = "csrchaged";
@@ -182,8 +185,11 @@ void CursorChangedEventProc(HWINEVENTHOOK hook2,
         HANDLE h = GetCursorHandle(ci.hCursor);
         if (h != NULL) {
           str = "csrid: " + std::to_string(reinterpret_cast<intptr_t>(h));
-          hookedchannel->Send(reinterpret_cast<const uint8_t*>(str.c_str()),
-                              static_cast<uint32_t>(str.length()), false);
+          for (auto hookedchannel : hookedchannels) {
+            hookedchannel.first->Send(
+                reinterpret_cast<const uint8_t*>(str.c_str()),
+                                 static_cast<uint32_t>(str.length()), false);
+          }
         } /* too hard! let me do it tomorrow.
           else {
           ICONINFO iconInfo;
@@ -224,9 +230,10 @@ void FlutterDataChannel::DataChannelSend(
     // So we implement it here for convenience.
     if (str == "csrhook") {
 
-      hook = SetWinEventHook(EVENT_OBJECT_SHOW, EVENT_OBJECT_NAMECHANGE, nullptr,
+      auto hook = SetWinEventHook(EVENT_OBJECT_SHOW, EVENT_OBJECT_NAMECHANGE, nullptr,
                               CursorChangedEventProc, 0, 0, WINEVENT_OUTOFCONTEXT);
-      hookedchannel = data_channel;
+
+      hookedchannels[data_channel] = hook;
     }else{
       data_channel->Send(reinterpret_cast<const uint8_t*>(str.c_str()),
                        static_cast<uint32_t>(str.length()), false);
@@ -239,8 +246,8 @@ void FlutterDataChannel::DataChannelClose(
     RTCDataChannel* data_channel,
     const std::string& data_channel_uuid,
     std::unique_ptr<MethodResultProxy> result) {
-  if (data_channel == hookedchannel) {
-    UnhookWinEvent(hook);
+  if (hookedchannels.find(data_channel) != hookedchannels.end()) {
+    UnhookWinEvent(hookedchannels[data_channel]);
   }
   data_channel->Close();
   auto it = base_->data_channel_observers_.find(data_channel_uuid);
