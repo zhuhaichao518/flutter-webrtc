@@ -71,6 +71,9 @@ class RTCVideoViewState extends State<RTCVideoView> {
   }
 
   Widget buildVideoElementView() {
+    if (widget.setAspectRatio!=null){
+      widget.setAspectRatio!(videoRenderer.videoWidth/videoRenderer.videoHeight);
+    }
     return HtmlElementView(viewType: videoRenderer.viewType);
   }
 
